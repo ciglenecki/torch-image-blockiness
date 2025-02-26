@@ -781,9 +781,9 @@ if __name__ == "__main__":
         # img = torch.rand(2, 3, 80, 50) * 25
         img_npy = rgb_to_grayscale(img[0]).numpy().squeeze().squeeze()
         # print(img_npy.shape)
-        # tb = caculate_image_blockiness(img)
+        tb = caculate_image_blockiness(img)
 
         nb = process_image(img_npy, DCT())
 
-        # print("torch:", tb)
+        print("torch:", tb)
         print(nb)
