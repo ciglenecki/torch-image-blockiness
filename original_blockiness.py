@@ -107,7 +107,9 @@ def calc_V(dct_img, h_block_num, w_block_num):
     c = w_offsets[None, :, None, None] + np.arange(BLOCK_SIZE)[None, None, None, :]
 
     # Extract the central value (a) and its four neighbors: left (b), right (c), top (d), and bottom (e).
+    print(dct_img.shape, r.shape, c.shape)
     a = dct_img[r, c]
+    print(a.shape)
     b_val = dct_img[r, c - BLOCK_SIZE]
     c_val = dct_img[r, c + BLOCK_SIZE]
     d_val = dct_img[r - BLOCK_SIZE, c]
