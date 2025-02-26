@@ -488,6 +488,75 @@ def calc_v_torch(
     return V_average
 
 
+def calc_v_torch(
+    dct_img,
+    height_block_num,
+    width_block_num,
+    block_size=DEFAULT_block_size,
+):
+    """
+    Args:
+        dct_img (torch.Tensor): Batched tensor of DCT images with shape (B, H, W)
+            or (B, 1, H, W).
+        h_block_num (int): Total number of blocks in the vertical direction.
+        w_block_num (int): Total number of blocks in the horizontal direction.
+
+    Returns:
+        torch.Tensor: V score for each image with shape (B, block_size, block_size).
+    """
+
+    h_block_num = height_block_num
+    w_block_num = width_block_num
+
+    # If dct_img has a channel dimension of size 1, remove it.
+    if dct_img.dim() == 4 and dct_img.size(1) == 1:
+        dct_img = dct_img[:, 0, :, :]  # Now shape becomes (B, H, W)
+
+    B = dct_img.shape[0]
+    device = dct_img.device
+
+    # Use the provided denominator
+    denom = (h_block_num - 2) * (w_block_num - 2)
+
+    # Preallocate accumulator for V (one patch per image)
+    V_sum = torch.zeros((B, block_size, block_size), device=device, dtype=dct_img.dtype)
+
+    # Compute starting offsets for h_blocks (loop-based)
+    h_offsets = (
+        block_size + torch.arange(1, h_block_num - 2, device=device) * block_size
+    ).tolist()
+
+    # Compute starting offsets for w_blocks (vectorized)
+    w_offsets = (
+        block_size + torch.arange(1, w_block_num - 2, device=device) * block_size
+    )
+    w_offsets_left = w_offsets - block_size
+    w_offsets_right = w_offsets + block_size
+
+    # Loop over each h_block position, but process all w_blocks in parallel
+    for h_off in h_offsets:
+        # Slice the full width in a single operation
+        a = dct_img[:, h_off : h_off + block_size, w_offsets]
+        b_val = dct_img[:, h_off : h_off + block_size, w_offsets_left]
+        c_val = dct_img[:, h_off : h_off + block_size, w_offsets_right]
+        d_val = dct_img[
+            :, h_off - block_size : h_off - block_size + block_size, w_offsets
+        ]
+        e_val = dct_img[
+            :, h_off + block_size : h_off + block_size + block_size, w_offsets
+        ]
+
+        # Compute V (PyTorch automatically broadcasts across the width dimension)
+        V = torch.sqrt((b_val + c_val - 2 * a) ** 2 + (d_val + e_val - 2 * a) ** 2)
+
+        # Sum over all w_blocks in one operation
+        V_sum += V.sum(dim=2)  # Sum across the width dimension
+
+    # Final averaging
+    V_average = V_sum / denom
+    return V_average
+
+
 def blockwise_dct(
     gray_imgs: torch.Tensor,
     height_block_num: int,
