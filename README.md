@@ -6,7 +6,6 @@ The higher the blockiness metric value, the more likely it is that the image was
 ![](assets/readme.webp)
 
 
-
 This is a implementation of blockiness algorithm from the paper ["A JPEG blocking artifact detector for image forensics" (Dinesh Bhardwaj, Vinod Pankajakshan)](https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066).
 
 It is based on the gohtanii's implementation from [DiverSeg dataset: "Rethinking Image Super-Resolution from Training Data Perspectives" (Go Ohtani, Ryu Tadokoro, Ryosuke Yamada, Yuki M. Asano, Iro Laina, Christian Rupprecht, Nakamasa Inoue, Rio Yokota, Hirokatsu Kataoka, and Yoshimitsu Aoki, ECCV2024)](https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7).
