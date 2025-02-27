@@ -1,4 +1,4 @@
-# 🧱 Torch Image Blockiness Metric
+# 🧱 Torch JPEG Blockiness Metric
 
 The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
@@ -6,20 +6,19 @@ The higher the blockiness metric value, the more likely it is that the image was
 ![](assets/readme.webp)
 
 
-This is a re-implementation of blockiness algorithm from the "Rethinking Image Super-Resolution from Training Data Perspectives" paper.
 
-**It has the following improvements over the original implementation:**
+This is a implementation of blockiness algorithm from the paper ["A JPEG blocking artifact detector for image forensics" (Dinesh Bhardwaj, Vinod Pankajakshan)](https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066).
 
-1. operations are written in torch (gpu friendly)
-2. operations are vectorized
-3. batched input is supported, with the assumption of same image size
+It is based on the gohtanii's implementation from [DiverSeg dataset: "Rethinking Image Super-Resolution from Training Data Perspectives" (Go Ohtani, Ryu Tadokoro, Ryosuke Yamada, Yuki M. Asano, Iro Laina, Christian Rupprecht, Nakamasa Inoue, Rio Yokota, Hirokatsu Kataoka, and Yoshimitsu Aoki, ECCV2024)](https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7).
 
 
-> note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
+**It has the following improvements over the gohtanii's implementation:**
 
-> note 2: this method should be scale-invariant as it computes the DCT for each fixed block rather than the entire image but I haven't empirically tested this yet.
+1. 🔥 operations are written in torch (gpu friendly)
+2. 🔥 operations are vectorized
+3. 🔥 batched input is supported, with the assumption of same image size
 
-> note 3: I was thinking about using the centarl crop of an image (most likely high entropy area) to reduce the compute time even more. The problem is that the crop might start in the middle of the JPEG block. I'm not sure if this method is robust to JPEG grid offsets. However, you could start cropping from the upper-left corner to some fixed dimension. Preferably, the bottom-right corner should pass through the center of the image.
+
 
 ## Usage
 
@@ -36,20 +35,50 @@ blockiness = calculate_image_blockiness(img_gray)
 blockiness_float = float(blockiness)
 ```
 
-## Motivation
+test the code against original (gohtanii's implementation)
 
-Authors of the paper have demonstrated that filtering images which have JPEG compresson helps the super resolution model achieve better performance in the long run. 
+```bash
+python3 -m test.test
+```
 
-## Definition from the paper
+```bash
+.
+------------------------
+Ran 1 test in 11.771s
+
+OK
+```
+
+
+## Formal definitions
+
+Definisions from the [DiverSeg dataset: "Rethinking Image Super-Resolution from Training Data Perspectives" (Go Ohtani, Ryu Tadokoro, Ryosuke Yamada, Yuki M. Asano, Iro Laina, Christian Rupprecht, Nakamasa Inoue, Rio Yokota, Hirokatsu Kataoka, and Yoshimitsu Aoki, ECCV2024)](https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7) paper:
+
+> These definitions are missing some crucial parts that would make them easier to understand. I therefore recommend reading the original paper ["A JPEG blocking artifact detector for image forensics"](https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066) with sci-hub.
 
 ![](assets/2025-02-27_04-01.png)
 ![](assets/2025-02-27_04-01_1.png)
 ![](assets/2025-02-27_04-02.png)
 
+
+## Other
+
+**Motivation**: Authors of the paper have demonstrated that filtering images which have JPEG compresson helps the super resolution model achieve better performance in the long run. 
+
+> note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
+
+> note 2: this method should be shift and scale-invariant as it computes the DCT for each fixed block rather than the entire image, but I haven't empirically tested this yet.
+
+> note 3: I was thinking about using the centarl crop of an image (most likely high entropy area) to reduce the compute time even more. The problem is that the crop might start in the middle of the JPEG block. I'm not sure if this method is robust to JPEG grid offsets. However, you could start cropping from the upper-left corner to some fixed dimension. Preferably, the bottom-right corner should pass through the center of the image.
+
+
 ## References
 
-"Rethinking Image Super-Resolution from Training Data Perspectives" (DiverSeg dataset), whose original implementation can be found at https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7
+DiverSeg dataset: "Rethinking Image Super-Resolution from Training Data Perspectives" (Ohtani, Go and Tadokoro, Ryu and Yamada, Ryosuke and Asano, Yuki M and Laina, Iro and Rupprecht, Christian and Inoue, Nakamasa and Yokota, Rio and Kataoka, Hirokatsu and Aoki, Yoshimitsu)
 
+github: https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7
+
+arxiv: https://arxiv.org/abs/2409.00768
 
 ```
 @inproceedings{ohtani2024rethinking,
