@@ -12,7 +12,7 @@ This is a re-implementation of blockiness algorithm from the "Rethinking Image S
 
 1. operations are written in torch (gpu friendly)
 2. operations are vectorized
-3. batch operation is support (with the assumption of same image size)
+3. batched input is supported, with the assumption of same image size
 
 
 > note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
