@@ -3,9 +3,9 @@ import torch
 import torch.fft
 import torchvision.transforms.functional
 
-from original_blockiness import DCT, calc_V, process_image
+from original_blockiness import DCT, calc_DCT, calc_V, process_image
 
-DEFAULT_block_size = 8
+DEFAULT_BLOCK_SIZE = 4
 
 
 import numpy as np
@@ -107,7 +107,7 @@ def dct_2d(x, norm=None):
 def calc_margin(
     height: int,
     width: int,
-    block_size: int = DEFAULT_block_size,
+    block_size: int = DEFAULT_BLOCK_SIZE,
 ) -> tuple[int, int, int, int]:
     """
     Calculate margins for DCT processing.
@@ -204,7 +204,7 @@ def calc_margin(
 #     dct_img: torch.Tensor,
 #     height_block_num: int,
 #     width_block_num: int,
-#     block_size: int = DEFAULT_block_size,
+#     block_size: int = DEFAULT_BLOCK_SIZE,
 # ):
 #     """
 #     Compute the average gradient magnitude V for each image in a batched DCT image tensor.
@@ -331,7 +331,7 @@ def calc_margin(
 
 
 def calc_v_torch(
-    dct_img, height_block_num, width_block_num, block_size=DEFAULT_block_size
+    dct_img, height_block_num, width_block_num, block_size=DEFAULT_BLOCK_SIZE
 ):
     dct_img
     h_block_num = height_block_num
@@ -393,7 +393,7 @@ def calc_v_torch(
 #     dct_img,
 #     height_block_num,
 #     width_block_num,
-#     block_size=DEFAULT_block_size,
+#     block_size=DEFAULT_BLOCK_SIZE,
 #     batch_size_h=1,
 # ):
 #     dct_img
@@ -472,7 +472,7 @@ def calc_v_torch(
 #     dct_img,
 #     height_block_num,
 #     width_block_num,
-#     block_size=DEFAULT_block_size,
+#     block_size=DEFAULT_BLOCK_SIZE,
 # ):
 #     """
 #     Args:
@@ -572,7 +572,7 @@ def calc_v_torch(
 #     dct_img,
 #     height_block_num,
 #     width_block_num,
-#     block_size=DEFAULT_block_size,
+#     block_size=DEFAULT_BLOCK_SIZE,
 # ):
 #     """
 #     Args:
@@ -641,7 +641,7 @@ def blockwise_dct(
     gray_imgs: torch.Tensor,
     height_block_num: int,
     width_block_num: int,
-    block_size: int = DEFAULT_block_size,
+    block_size: int = DEFAULT_BLOCK_SIZE,
 ) -> torch.Tensor:
     """Compute the DCT of an image block-wise using batched processing.
 
@@ -658,8 +658,8 @@ def blockwise_dct(
     Returns:
         A tensor containing the DCT coefficients of the image blocks, arranged in the original block layout.
     """
-    batch_size, channel_dim, h, w = gray_imgs.shape
-    assert channel_dim == 1, "Input image must be grayscale."
+    # batch_size, channel_dim, h, w = gray_imgs.shape
+    # assert channel_dim == 1, "Input image must be grayscale."
     if (
         gray_imgs.shape[-2] < height_block_num * block_size
         or gray_imgs.shape[-1] < width_block_num * block_size
@@ -667,51 +667,38 @@ def blockwise_dct(
         raise ValueError("Invalid image dimensions.")
 
     # Divide the image into blocks of shape (height_block_num, width_block_num, block_size, block_size).
-
     blocks = gray_imgs.unfold(
-        -2,
+        1,
         block_size,
         block_size,
     ).unfold(
-        -1,
+        0,
         block_size,
         block_size,
     )
     # print("Blocks shape", blocks.shape)
-    blocks = blocks.contiguous().view(batch_size, -1, block_size, block_size)
+    blocks = blocks.contiguous().view(-1, block_size, block_size)
     # print("Blocks shape", blocks.shape)
     # Apply the batched DCT transform to all blocks at once.
-    blocks_no_channel = blocks.squeeze(1)
-    dct_blocks = dct_2d(blocks_no_channel, norm="ortho")
+    # blocks_no_channel = blocks.squeeze(1)
+    # input(blocks_no_channel.dtype)
+    dct_blocks: torch.Tensor = dct_2d(blocks, norm="ortho")
 
-    # print(dct_blocks.shape)
     # Reshape back to (height_block_num, width_block_num, block_size, block_size).
-    dct_blocks = dct_blocks.view(
-        batch_size,
-        height_block_num,
-        width_block_num,
-        block_size,
-        block_size,
-    )
 
-    # print(dct_blocks.shape)
-    # Rearrange blocks to reconstruct the full DCT image.
-    dct_imgs = (
-        dct_blocks.permute(0, 1, 3, 2, 4)
-        .contiguous()
-        .view(
-            batch_size,
-            1,
-            height_block_num * block_size,
-            width_block_num * block_size,
-        )
+    dct_imgs = dct_blocks.view(
+        height_block_num, width_block_num, block_size, block_size
+    ).permute(0, 2, 1, 3)
+    dct_imgs = dct_imgs.contiguous().view(
+        height_block_num * block_size,
+        width_block_num * block_size,
     )
     return dct_imgs
 
 
 def caculate_image_blockiness(
     images: torch.Tensor,
-    block_size: int = DEFAULT_block_size,
+    block_size: int = DEFAULT_BLOCK_SIZE,
 ):
     offset = 4
     device = images.device
@@ -724,21 +711,26 @@ def caculate_image_blockiness(
         cal_height // block_size,
         cal_width // block_size,
     )
+    # TODO: bring back
+    # input(gray_images.shape)
+    gray_tensor_cut = gray_images[0, 0, :cal_height, :cal_width]
+    # gray_tensor_cut = gray_images
 
-    gray_tensor_cut = gray_images[..., :cal_height, :cal_width]
-
-    gray_offset = gray_images[
-        ..., offset : cal_height + offset, offset : cal_width + offset
-    ]
-    # gray_offset = torch.zeros_like(gray_images)
-    # gray_offset[..., :-4, :-4] = gray_images[..., 4:, 4:]
+    # gray_offset = gray_images[..., offset:, offset:]
     # gray_offset = gray_offset[..., :cal_height, :cal_width]
+    gray_offset = torch.zeros_like(gray_images)
+    gray_offset[..., :-4, :-4] = gray_images[..., 4:, 4:]
+    gray_offset = gray_offset[0, 0, :cal_height, :cal_width]
+    print(gray_offset.shape, gray_tensor_cut.shape)
     dct_imgs = blockwise_dct(
         gray_imgs=gray_tensor_cut,
         height_block_num=height_block_num,
         width_block_num=width_block_num,
         block_size=block_size,
     )
+    # return dct_imgs
+    print("DCT torch", dct_imgs.shape, dct_imgs)
+    return
     dct_offset_imgs = blockwise_dct(
         gray_imgs=gray_offset,
         height_block_num=height_block_num,
@@ -751,6 +743,7 @@ def caculate_image_blockiness(
         width_block_num=width_block_num,
         block_size=block_size,
     )
+    print("V torch", v_average.shape, v_average)
     v_offset_average = calc_v_torch(
         dct_img=dct_offset_imgs,
         height_block_num=height_block_num,
@@ -765,14 +758,21 @@ def caculate_image_blockiness(
 if __name__ == "__main__":
     torch.set_float32_matmul_precision("highest")
     torch.set_printoptions(precision=8)
+    img = torch.rand(3 * 4, 2 * 4)
+    img_npy = img.numpy()
+    a = blockwise_dct(img, 3, 2)
+    b = calc_DCT(img_npy, DCT(N=4), 3, 2)
+    print(a)
+    print(b)
+    exit(1)
 
     # img_size = block_size * num_blocks
     # dct_img = torch.rand(2, block_size * num_blocks, block_size * num_blocks)
     # dct_img_npy = dct_img[0].numpy()
     for i in ["", 80, 60]:
-        img = torchvision.io.read_image(f"unsplash{i}.jpg").squeeze(0)
+        img = torchvision.io.read_image(f"unsplash{i}.jpg")
         # img = torch.rand(2, 3, 80, 50) * 25
-        img_npy = rgb_to_grayscale(img[0]).numpy().squeeze().squeeze()
+        img_npy = rgb_to_grayscale(img[0]).numpy().squeeze()
         # print(img_npy.shape)
         tb = caculate_image_blockiness(img)
 

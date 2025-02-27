@@ -66,17 +66,18 @@ def calc_margin(height, width):
     return cal_height, cal_width, h_margin, w_margin
 
 
-def calc_DCT(img, dct, h_block_num, w_block_num):
-    dct_img = np.zeros((h_block_num * BLOCK_SIZE, w_block_num * BLOCK_SIZE))
+def calc_DCT(img, dct: DCT, h_block_num, w_block_num):
+    block_size = dct.N
+    dct_img = np.zeros((h_block_num * block_size, w_block_num * block_size))
     for h_block in range(h_block_num):
         for w_block in range(w_block_num):
             dct_img[
-                h_block * BLOCK_SIZE : (h_block + 1) * BLOCK_SIZE,
-                w_block * BLOCK_SIZE : (w_block + 1) * BLOCK_SIZE,
+                h_block * block_size : (h_block + 1) * block_size,
+                w_block * block_size : (w_block + 1) * block_size,
             ] = dct.dct2(
                 img[
-                    h_block * BLOCK_SIZE : (h_block + 1) * BLOCK_SIZE,
-                    w_block * BLOCK_SIZE : (w_block + 1) * BLOCK_SIZE,
+                    h_block * block_size : (h_block + 1) * block_size,
+                    w_block * block_size : (w_block + 1) * block_size,
                 ]
             )
     return dct_img
@@ -107,9 +108,7 @@ def calc_V(dct_img, h_block_num, w_block_num):
     c = w_offsets[None, :, None, None] + np.arange(BLOCK_SIZE)[None, None, None, :]
 
     # Extract the central value (a) and its four neighbors: left (b), right (c), top (d), and bottom (e).
-    print(dct_img.shape, r.shape, c.shape)
     a = dct_img[r, c]
-    print(a.shape)
     b_val = dct_img[r, c - BLOCK_SIZE]
     c_val = dct_img[r, c + BLOCK_SIZE]
     d_val = dct_img[r - BLOCK_SIZE, c]
@@ -153,11 +152,12 @@ def process_image(gray_img, dct):
     h_block_num, w_block_num = cal_height // BLOCK_SIZE, cal_width // BLOCK_SIZE
 
     dct_img = calc_DCT(gray_img, dct, h_block_num, w_block_num)
-
+    print("DCT npy", dct_img.shape, dct_img)
+    return
     dct_cropped_img = calc_DCT(gray_img[4:, 4:], dct, h_block_num, w_block_num)
 
     V_average = calc_V(dct_img, h_block_num, w_block_num)
-    print(V_average)
+    print("V npy", V_average.shape, V_average)
     Vc_average = calc_V(dct_cropped_img, h_block_num, w_block_num)
     D = np.abs((Vc_average - V_average) / V_average)
 
