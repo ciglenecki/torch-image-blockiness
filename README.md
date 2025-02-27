@@ -63,7 +63,9 @@ Definisions from the [DiverSeg dataset: "Rethinking Image Super-Resolution from 
 
 ## Other
 
-**Motivation**: Authors of the paper have demonstrated that filtering images which have JPEG compresson helps the super resolution model achieve better performance in the long run. 
+**Motivation**: Authors of the paper have demonstrated that filtering images which have JPEG compresson helps the super resolution model achieve better performance in the long run.Even more crucial, JPEG blockiness filtering prevents the dataset from containing excessively strong compression, which can be **highly detrimental to the overall training process** as shown by the [DiverSeg dataset paper](https://arxiv.org/abs/2409.00768) and [Phillip Hoffman's BHI filtering blog post](https://huggingface.co/blog/Phips/bhi-filtering#blockiness).
+
+
 
 > note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
 
@@ -74,6 +76,9 @@ Definisions from the [DiverSeg dataset: "Rethinking Image Super-Resolution from 
 
 ## References
 
+Phillip Hoffman's "Filtering single image super-resolution datasets with BHI" blog post https://huggingface.co/blog/Phips/bhi-filtering
+
+--- 
 DiverSeg dataset: "Rethinking Image Super-Resolution from Training Data Perspectives" (Ohtani, Go and Tadokoro, Ryu and Yamada, Ryosuke and Asano, Yuki M and Laina, Iro and Rupprecht, Christian and Inoue, Nakamasa and Yokota, Rio and Kataoka, Hirokatsu and Aoki, Yoshimitsu)
 
 github: https://github.com/gohtanii/DiverSeg-dataset/tree/284cc1c030424b8b0f7040020bd6435e8ed2e6d7
