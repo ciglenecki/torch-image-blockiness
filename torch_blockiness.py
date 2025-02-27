@@ -499,7 +499,10 @@ def caculate_image_blockiness(
         width_block_num=width_block_num,
         block_size=block_size,
     )
-    print("V torch", v_offset_average.shape, v_offset_average)
+
+    D = np.abs((v_offset_average.numpy() - v_average.numpy()) / v_average.numpy())
+
+    return np.sum(D)
     d = torch.abs((v_offset_average - v_average) / v_offset_average)
     d_sum = torch.sum(d)
     return d_sum

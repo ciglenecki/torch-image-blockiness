@@ -157,8 +157,7 @@ def process_image(gray_img, dct):
     V_average = calc_V(dct_img, h_block_num, w_block_num)
 
     Vc_average = calc_V(dct_cropped_img, h_block_num, w_block_num)
-    print("V npy", Vc_average.shape, Vc_average)
-    return
+
     D = np.abs((Vc_average - V_average) / V_average)
 
     return np.sum(D)
