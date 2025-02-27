@@ -1,5 +1,4 @@
 import torchvision
-import torchvision.transforms.functional
 
 from torch_blockiness.blockiness import (
     calculate_image_blockiness,

@@ -21,12 +21,12 @@ It is based on the gohtanii's implementation from [DiverSeg dataset: "Rethinking
 
 ## Usage
 
-you can copy paste the [torch_blockiness/torch_blockiness.py](src/torch_blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
+you can copy paste the [torch_jpeg_blockiness/blockiness.py](torch_jpeg_blockiness/blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
 
 ```py
 import torchvision
 import torchvision.transforms.functional
-from torch_blockiness.blockiness import calculate_image_blockiness, rgb_to_grayscale
+from torch_jpeg_blockiness.blockiness import calculate_image_blockiness, rgb_to_grayscale
 
 img = torchvision.io.read_image("example_images/unsplash.jpg")
 img_gray = rgb_to_grayscale(img)
@@ -67,7 +67,7 @@ Definisions from the [DiverSeg dataset: "Rethinking Image Super-Resolution from 
 
 
 
-> note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
+> note: the code is tested against the original implementation. test can be found at [tests/test.py](tests/test.py)
 
 > note 2: this method should be shift and scale-invariant as it computes the DCT for each fixed block rather than the entire image, but I haven't empirically tested this yet.
 

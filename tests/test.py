@@ -3,11 +3,11 @@ import unittest
 import numpy as np
 import torch
 
-from torch_blockiness.blockiness import (
+from torch_jpeg_blockiness.blockiness import (
     calculate_image_blockiness,
     rgb_to_grayscale,
 )
-from torch_blockiness.original_blockiness import DCT, process_image
+from torch_jpeg_blockiness.original_blockiness import DCT, process_image
 
 
 class TestImageBlockiness(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestImageBlockiness(unittest.TestCase):
                 grayscale_image: torch.Tensor = rgb_to_grayscale(random_image)
 
                 # Compute the blockiness metric using the torch-based implementation.
-                torch_blockiness: torch.Tensor = calculate_image_blockiness(
+                torch_jpeg_blockiness: torch.Tensor = calculate_image_blockiness(
                     grayscale_image
                 )
 
@@ -58,14 +58,14 @@ class TestImageBlockiness(unittest.TestCase):
                 numpy_blockiness: np.ndarray = process_image(numpy_image, DCT())
 
                 # Convert the torch result to a numpy array for comparison.
-                torch_blockiness_numpy: np.ndarray = (
-                    torch_blockiness[0].detach().cpu().numpy()
+                torch_jpeg_blockiness_numpy: np.ndarray = (
+                    torch_jpeg_blockiness[0].detach().cpu().numpy()
                 )
 
                 # Compute the relative difference between the two implementations.
                 epsilon: float = 1e-8
                 relative_difference: float = np.abs(
-                    torch_blockiness_numpy - numpy_blockiness
+                    torch_jpeg_blockiness_numpy - numpy_blockiness
                 ) / (np.abs(numpy_blockiness) + epsilon)
 
                 self.assertTrue(
