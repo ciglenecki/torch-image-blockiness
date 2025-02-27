@@ -8,16 +8,18 @@ The higher the blockiness metric value, the more likely it is that the image was
 
 This is a re-implementation of blockiness algorithm from the "Rethinking Image Super-Resolution from Training Data Perspectives" paper.
 
-It has the following improvements over the original implementation:
+**It has the following improvements over the original implementation:**
 
 1. operations are written in torch (gpu friendly)
 2. operations are vectorized
 3. batch operation is support (with the assumption of same image size)
 
 
-note: I think this method is scale-invariant as it computes the DCT for each fixed block rather than the entire image but I haven't empirically tested this yet.
+> note: the code is tested against the original implementation. test can be found at [test/test.py](test/test.py)
 
-note2: I was thinking about using the centarl crop of an image (most likely high entropy area) to reduce the compute time even more. The problem is that the crop might start in the middle of the JPEG block. I'm not sure if this method is robust to JPEG grid offsets. However, you could start cropping from the upper-left corner to some fixed dimension. Preferably, the bottom-right corner should pass through the center of the image.
+> note 2: this method should be scale-invariant as it computes the DCT for each fixed block rather than the entire image but I haven't empirically tested this yet.
+
+> note 3: I was thinking about using the centarl crop of an image (most likely high entropy area) to reduce the compute time even more. The problem is that the crop might start in the middle of the JPEG block. I'm not sure if this method is robust to JPEG grid offsets. However, you could start cropping from the upper-left corner to some fixed dimension. Preferably, the bottom-right corner should pass through the center of the image.
 
 ## Usage
 
