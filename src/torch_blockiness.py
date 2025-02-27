@@ -1,3 +1,9 @@
+"""
+Author: Matej Ciglenečki
+Author's repo: https://github.com/ciglenecki/torch-jpeg-blockiness
+Licence: MIT
+"""
+
 import numpy as np
 import torch
 import torch.fft
