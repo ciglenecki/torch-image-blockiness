@@ -3,7 +3,7 @@
 The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
 
-![](assets/readme.webp)
+![](https://raw.githubusercontent.com/ciglenecki/torch-jpeg-blockiness/refs/heads/main/assets/readme.webp)
 
 
 This is a implementation of blockiness algorithm from the paper ["A JPEG blocking artifact detector for image forensics" (Dinesh Bhardwaj, Vinod Pankajakshan)](https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066).
@@ -21,12 +21,12 @@ It is based on the gohtanii's implementation from [DiverSeg dataset: "Rethinking
 
 ## Usage
 
-you can copy paste the [src/torch_blockiness.py](src/torch_blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
+you can copy paste the [torch_blockiness/torch_blockiness.py](src/torch_blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
 
 ```py
 import torchvision
 import torchvision.transforms.functional
-from src.torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
+from torch_blockiness.blockiness import calculate_image_blockiness, rgb_to_grayscale
 
 img = torchvision.io.read_image("example_images/unsplash.jpg")
 img_gray = rgb_to_grayscale(img)
@@ -55,9 +55,10 @@ Definisions from the [DiverSeg dataset: "Rethinking Image Super-Resolution from 
 
 > These definitions are missing some crucial parts that would make them easier to understand. I therefore recommend reading the original paper ["A JPEG blocking artifact detector for image forensics"](https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066) with sci-hub.
 
-![](assets/2025-02-27_04-01.png)
-![](assets/2025-02-27_04-01_1.png)
-![](assets/2025-02-27_04-02.png)
+
+![](https://raw.githubusercontent.com/ciglenecki/torch-jpeg-blockiness/refs/heads/main/assets/2025-02-27_04-01.png)
+![](https://raw.githubusercontent.com/ciglenecki/torch-jpeg-blockiness/refs/heads/main/assets/2025-02-27_04-01_1.png)
+![](https://raw.githubusercontent.com/ciglenecki/torch-jpeg-blockiness/refs/heads/main/assets/2025-02-27_04-02.png)
 
 
 ## Other

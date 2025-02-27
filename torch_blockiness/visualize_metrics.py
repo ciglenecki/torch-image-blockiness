@@ -7,7 +7,10 @@ import cv2
 import numpy as np
 import torchvision
 
-from src.torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
+from torch_blockiness.blockiness import (
+    calculate_image_blockiness,
+    rgb_to_grayscale,
+)
 
 # Constants
 DEFAULT_BLOCK_SIZE = 8
