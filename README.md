@@ -1,10 +1,11 @@
-# Torch blockiness image metric
+# Torch Image Blockiness Metric
+
+The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
 **Re-implementation of blockiness algorithm from the "Rethinking Image Super-Resolution from Training Data Perspectives" paper.**
 
 ![](assets/readme.webp)
 
-The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
 This re-implementation has the following improvements over the original implenetation:
 
