@@ -1,15 +1,13 @@
 import argparse
 import logging
 import sys
-import unittest
 from pathlib import Path
 
 import cv2
 import numpy as np
-import torch
 import torchvision
 
-from torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
+from src.torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
 
 # Constants
 DEFAULT_BLOCK_SIZE = 8
@@ -43,9 +41,9 @@ def add_text_to_image(
         # Draw the outline (white, thicker)
         img_width = img.shape[1]
         img_width_scale = img_width / 500
-        position = (30, 60 + int(img_width_scale * 5))
-        font_scale = 0.5 * img_width_scale + 0.3
-        font_thickness = int(font_scale * 1.5 + 2)
+        position = (30, 150 + int(img_width_scale * 20))
+        font_scale = 1.4 * img_width_scale + 0.3
+        font_thickness = int(font_scale * 2 + 2)
         img_with_text = cv2.putText(
             img.copy(),
             text,
@@ -138,8 +136,16 @@ def main() -> None:
         description="Load images from an input directory, compute blockiness score, "
         "annotate the images, and save them to an output directory."
     )
-    parser.add_argument("--input_dir", help="Directory containing input images.")
-    parser.add_argument("--ouput_dir", help="Directory to save annotated images.")
+    parser.add_argument(
+        "--input_dir",
+        help="Directory containing input images.",
+        required=True,
+    )
+    parser.add_argument(
+        "--output_dir",
+        help="Directory to save annotated images.",
+        required=True,
+    )
     parser.add_argument(
         "--block_size",
         type=int,
@@ -149,7 +155,7 @@ def main() -> None:
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
-    output_dir = Path(args.ouput_dir)
+    output_dir = Path(args.output_dir)
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

@@ -85,9 +85,10 @@ def calc_DCT(img, dct: DCT, h_block_num, w_block_num):
 
 def calc_v_npy(dct_img, h_block_num, w_block_num):
     # Number of blocks over which we'll average (the original loop iterates over h_block in range(1, h_block_num-2)
-    # and w_block in range(1, w_block_num-2); note that there are (h_block_num-3) x (w_block_num-3) such blocks)
-    num_h = h_block_num - 3
-    num_w = w_block_num - 3
+    # and w_block in range(1, w_block_num-2)
+    # note that there are (h_block_num-3) x (w_block_num-3) such blocks)
+    # num_h = h_block_num - 3
+    # num_w = w_block_num - 3
 
     # Compute the starting offset for each block.
     # For each block, the pixel coordinate is computed as:

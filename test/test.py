@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 import torch
 
-from original_blockiness import DCT, process_image
-from torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
+from src.original_blockiness import DCT, process_image
+from src.torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
 
 
 class TestImageBlockiness(unittest.TestCase):

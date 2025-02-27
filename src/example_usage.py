@@ -1,7 +1,7 @@
 import torchvision
 import torchvision.transforms.functional
 
-from torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
+from src.torch_blockiness import calculate_image_blockiness, rgb_to_grayscale
 
 
 def main():
