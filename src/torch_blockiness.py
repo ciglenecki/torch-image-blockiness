@@ -3,16 +3,12 @@ import json
 import numpy as np
 import torch
 import torch.fft
+import torchvision
 import torchvision.transforms.functional
 
 from original_blockiness import DCT, process_image
 
 DEFAULT_BLOCK_SIZE = 8
-
-
-import numpy as np
-import torch
-import torchvision
 
 
 def rgb_to_grayscale(tensor):
