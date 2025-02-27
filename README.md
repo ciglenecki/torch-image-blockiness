@@ -66,7 +66,7 @@ Authors of the paper have demonstrated that filtering images which have JPEG com
 
 "A JPEG blocking artifact detector for image forensics", original paper which introduced blockiness metric.
 
-https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066 (open it with sci-hub)
+(open with sci-hub) https://www.sciencedirect.com/science/article/abs/pii/S0923596518302066 
 
 ```
 @article{bhardwaj2018jpeg,
