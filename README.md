@@ -2,12 +2,13 @@
 
 The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
-**Re-implementation of blockiness algorithm from the "Rethinking Image Super-Resolution from Training Data Perspectives" paper.**
 
 ![](assets/readme.webp)
 
 
-This re-implementation has the following improvements over the original implenetation:
+This is a re-implementation of blockiness algorithm from the "Rethinking Image Super-Resolution from Training Data Perspectives" paper.
+
+It has the following improvements over the original implementation:
 
 1. operations are written in torch (gpu friendly)
 2. operations are vectorized
