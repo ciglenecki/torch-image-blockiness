@@ -1,4 +1,4 @@
-# Torch Image Blockiness Metric
+# 🧱 Torch Image Blockiness Metric
 
 The higher the blockiness metric value, the more likely it is that the image was JPEG-compressed at a low quality.
 
