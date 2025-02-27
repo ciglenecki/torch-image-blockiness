@@ -152,8 +152,6 @@ def process_image(gray_img, dct):
     h_block_num, w_block_num = cal_height // BLOCK_SIZE, cal_width // BLOCK_SIZE
 
     dct_img = calc_DCT(gray_img, dct, h_block_num, w_block_num)
-    print("DCT npy", dct_img.shape, dct_img)
-    return
     dct_cropped_img = calc_DCT(gray_img[4:, 4:], dct, h_block_num, w_block_num)
 
     V_average = calc_V(dct_img, h_block_num, w_block_num)

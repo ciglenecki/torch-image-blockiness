@@ -480,8 +480,6 @@ def caculate_image_blockiness(
         width_block_num=width_block_num,
         block_size=block_size,
     )
-    print("dct torch", dct_imgs.shape, dct_imgs)
-    return
 
     dct_offset_imgs = blockwise_dct(
         gray_imgs=gray_offset,
