@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import torchvision
 
-from torch_blockiness.blockiness import (
+from torch_jpeg_blockiness.blockiness import (
     calculate_image_blockiness,
     rgb_to_grayscale,
 )

@@ -21,8 +21,15 @@ It is based on the gohtanii's implementation from [DiverSeg dataset: "Rethinking
 
 ## Usage
 
-you can copy paste the [torch_jpeg_blockiness/blockiness.py](torch_jpeg_blockiness/blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
+(option a) you can copy paste the [torch_jpeg_blockiness/blockiness.py](torch_jpeg_blockiness/blockiness.py) file to your project directory as it has no dependencies except torch and numpy.
 
+(option b) you can also install the package with pip
+```
+pip install torch_jpeg_blockiness
+```
+
+
+usage:
 ```py
 import torchvision
 import torchvision.transforms.functional
