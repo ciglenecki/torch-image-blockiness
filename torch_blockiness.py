@@ -5,7 +5,7 @@ import torch
 import torch.fft
 import torchvision.transforms.functional
 
-from original_blockiness import DCT, calc_DCT, calc_V, process_image
+from original_blockiness import DCT, process_image
 
 DEFAULT_BLOCK_SIZE = 8
 
@@ -127,119 +127,101 @@ def calc_margin(
     return cal_height, cal_width, height_margin, width_margin
 
 
-# def calc_v_torch(
-#     dct_img, height_block_num, width_block_num, block_size=DEFAULT_BLOCK_SIZE
-# ):
-#     dct_img
-#     h_block_num = height_block_num
-#     w_block_num = width_block_num
-#     block_size
-#     # Number of blocks (note: h_offsets and w_offsets are built using 1 to h_block_num-2 (exclusive),
-#     # which gives h_block_num-3 elements, same for width)
-#     num_h = h_block_num - 3
-#     num_w = w_block_num - 3
-
-#     # Use the device of the input tensor for all created tensors
-#     device = dct_img.device
-
-#     # Compute the starting offset for each block.
-#     # Each offset is: block_size + (block_index * block_size), where block_index goes from 1 to h_block_num-2 (exclusive)
-#     h_offsets = (
-#         block_size + torch.arange(1, h_block_num - 2, device=device) * block_size
-#     )  # shape: (num_h,)
-#     w_offsets = (
-#         block_size + torch.arange(1, w_block_num - 2, device=device) * block_size
-#     )  # shape: (num_w,)
-
-#     # Create 4D index arrays for the row (r) and column (c) coordinates.
-#     # r will have shape (num_h, 1, block_size, 1)
-#     # c will have shape (1, num_w, 1, block_size)
-#     # They broadcast to form full index arrays of shape (num_h, num_w, block_size, block_size)
-#     r = (
-#         h_offsets[:, None, None, None]
-#         + torch.arange(block_size, device=device)[None, None, :, None]
-#     )
-#     c = (
-#         w_offsets[None, :, None, None]
-#         + torch.arange(block_size, device=device)[None, None, None, :]
-#     )
-
-#     # Ensure indices are of integer type (long)
-#     r = r.to(dtype=torch.int)
-#     c = c.to(dtype=torch.int)
-#     dct_img = dct_img.squeeze(0).squeeze(0)
-
-#     # Extract the central value (a) and its four neighbors:
-#     # left (b_val), right (c_val), top (d_val), and bottom (e_val).
-#     a = dct_img[..., r, c]
-#     b_val = dct_img[..., r, c - block_size]
-#     c_val = dct_img[..., r, c + block_size]
-#     d_val = dct_img[..., r - block_size, c]
-#     e_val = dct_img[..., r + block_size, c]
-
-#     # Compute V for each block and each pixel in the block.
-#     V = torch.sqrt((b_val + c_val - 2 * a) ** 2 + (d_val + e_val - 2 * a) ** 2)
-
-#     # Average V over all blocks (i.e. over the first two dimensions)
-#     V_average = V.sum(dim=(0, 1)) / ((h_block_num - 2) * (w_block_num - 2))
-
-#     return V_average
-
-
 def calc_v_torch(
-    dct_img,
+    dct_img: torch.Tensor,
     height_block_num: int,
     width_block_num: int,
-    block_size=DEFAULT_BLOCK_SIZE,
-):
-    # If input is (B,1,H,W), squeeze the channel dimension but keep the batch.
-    if dct_img.dim() == 4:
-        dct_img = dct_img.squeeze(1)  # now shape is (B, H, W)
+    block_size: int = DEFAULT_BLOCK_SIZE,
+) -> torch.Tensor:
+    """Calculate averaged V values from a batched DCT image.
 
-    # Use the provided block numbers.
-    h_block_num = height_block_num
-    w_block_num = width_block_num
-    # Note: Offsets are built from indices 1 to h_block_num-2 (exclusive)
-    # which produces (h_block_num - 3) values, same for width.
-    num_h = h_block_num - 3
-    num_w = w_block_num - 3
+    This function computes the V value for each block in the DCT image by extracting the
+    central pixel and its four neighbors (left, right, top, bottom) from each block.
+    The V value for each pixel is defined as:
+      V = sqrt((b_val + c_val - 2 * a)² + (d_val + e_val - 2 * a)²)
+    where:
+      - a is the central pixel value,
+      - b_val and c_val are the left and right neighbor values,
+      - d_val and e_val are the top and bottom neighbor values.
+    The computed V values are then averaged over all blocks for each image in the batch.
+
+    The input tensor should have shape (B, H, W) or (B, 1, H, W), where B is the batch size.
+    The block indices are computed using offsets derived from the block size.
+
+    Args:
+        dct_img: A tensor representing the DCT image with shape (B, H, W) or (B, 1, H, W).
+        height_block_num: Number of blocks along the height of the image.
+        width_block_num: Number of blocks along the width of the image.
+        block_size: Size of each block. Defaults to DEFAULT_BLOCK_SIZE.
+
+    Returns:
+        A tensor of shape (B,) containing the averaged V values for each image in the batch.
+
+    Raises:
+        TypeError: If dct_img is not a torch.Tensor.
+        ValueError: If dct_img has an unsupported number of dimensions, or if block dimensions are invalid.
+    """
+    # Validate input tensor type
+    if not isinstance(dct_img, torch.Tensor):
+        raise TypeError(f"dct_img must be a torch.Tensor, got {type(dct_img)}")
+
+    # Validate dimensions: allow (B, H, W) or (B, 1, H, W)
+    if dct_img.dim() not in (3, 4):
+        raise ValueError(
+            f"dct_img must have 3 or 4 dimensions (got {dct_img.dim()}). Expected (B, H, W) or (B, 1, H, W)."
+        )
+
+    # Validate block parameters
+    if block_size <= 0:
+        raise ValueError(f"block_size must be positive, got {block_size}")
+    if height_block_num <= 2 or width_block_num <= 2:
+        raise ValueError(
+            f"height_block_num and width_block_num must be greater than 2 (got {height_block_num} and {width_block_num})."
+        )
+
+    # If input is (B, 1, H, W), squeeze the channel dimension while keeping the batch.
+    if dct_img.dim() == 4:
+        dct_img = dct_img.squeeze(1)  # shape becomes (B, H, W)
+
+    # Compute number of offsets (blocks used for indexing)
+    num_h = height_block_num - 3
+    num_w = width_block_num - 3
 
     device = dct_img.device
 
-    # Compute the starting offsets for each block.
-    # Each offset is: block_size + (index * block_size), with index from 1 to (h_block_num-2)-1.
+    # Compute starting offsets for each block.
+    # Offsets: block_size + (index * block_size) for index 1 to height_block_num-3 (inclusive)
     h_offsets = (
-        block_size + torch.arange(1, h_block_num - 2, device=device) * block_size
+        block_size + torch.arange(1, height_block_num - 2, device=device) * block_size
     )  # shape: (num_h,)
     w_offsets = (
-        block_size + torch.arange(1, w_block_num - 2, device=device) * block_size
+        block_size + torch.arange(1, width_block_num - 2, device=device) * block_size
     )  # shape: (num_w,)
 
-    # Build the row and column indices.
-    # r will be built by adding torch.arange(block_size) to each h_offset,
-    # and c similarly from each w_offset.
-    # We first reshape the offsets so that broadcasting yields the desired (num_h, num_w, block_size, block_size) shape.
+    # Build the row and column indices for blocks.
+    # r: shape (num_h, 1, block_size, 1), c: shape (1, num_w, 1, block_size)
     r = h_offsets.view(num_h, 1, 1, 1) + torch.arange(block_size, device=device).view(
         1, 1, block_size, 1
     )
     c = w_offsets.view(1, num_w, 1, 1) + torch.arange(block_size, device=device).view(
         1, 1, 1, block_size
     )
-    # Broadcast to full grid shape:
+
+    # Expand indices to full grid shape (num_h, num_w, block_size, block_size) and cast to int.
     r = r.expand(num_h, num_w, block_size, block_size).to(torch.int)
     c = c.expand(num_h, num_w, block_size, block_size).to(torch.int)
 
-    # dct_img now has shape (B, H, W)
-    B = dct_img.size(0)
-    # Create a batch index tensor of shape (B, 1, 1, 1, 1) so we can index into the first dimension.
-    batch_idx = torch.arange(B, device=device).view(B, 1, 1, 1, 1)
-    # Expand r and c to include the batch dimension:
-    # Final shape: (B, num_h, num_w, block_size, block_size)
-    r_exp = r.unsqueeze(0).expand(B, num_h, num_w, block_size, block_size)
-    c_exp = c.unsqueeze(0).expand(B, num_h, num_w, block_size, block_size)
+    # dct_img has shape (B, H, W)
+    batch_size = dct_img.size(0)
+    # Create a batch index tensor of shape (B, 1, 1, 1, 1) for advanced indexing.
+    batch_idx = torch.arange(batch_size, device=device).view(batch_size, 1, 1, 1, 1)
 
-    # Now extract the central value (a) and its four neighbors:
-    # left (b_val), right (c_val), top (d_val), and bottom (e_val).
+    # Expand r and c to include the batch dimension: shape becomes (B, num_h, num_w, block_size, block_size)
+    r_exp = r.unsqueeze(0).expand(batch_size, num_h, num_w, block_size, block_size)
+    c_exp = c.unsqueeze(0).expand(batch_size, num_h, num_w, block_size, block_size)
+
+    # Extract the central value (a) and its four neighbors:
+    # left (b_val), right (c_val), top (d_val), and bottom (e_val)
     a = dct_img[batch_idx, r_exp, c_exp]
     b_val = dct_img[batch_idx, r_exp, c_exp - block_size]
     c_val = dct_img[batch_idx, r_exp, c_exp + block_size]
@@ -250,8 +232,8 @@ def calc_v_torch(
     V = torch.sqrt((b_val + c_val - 2 * a) ** 2 + (d_val + e_val - 2 * a) ** 2)
 
     # Average V over all blocks (dimensions 1 and 2) for each image.
-    # (The original code divided by ((h_block_num - 2) * (w_block_num - 2)); we preserve that normalization.)
-    V_average = V.sum(dim=(1, 2)) / ((h_block_num - 2) * (w_block_num - 2))
+    normalization = (height_block_num - 2) * (width_block_num - 2)
+    V_average = V.sum(dim=(1, 2)) / normalization
 
     return V_average
 
@@ -277,13 +259,17 @@ def blockwise_dct(
     Returns:
         A tensor containing the DCT coefficients of the image blocks, arranged in the original block layout.
     """
-    batch_size, channel_dim, h, w = gray_imgs.shape
-    # assert channel_dim == 1, "Input image must be grayscale."
+    assert gray_imgs.dim() == 4, "Input tensor must have shape (B, 1, H, W)."
+    batch_size, channel_size, *_ = gray_imgs.shape
+    assert channel_size == 1, "Input tensor must have shape (B, 1, H, W)."
+
     if (
         gray_imgs.shape[-2] < height_block_num * block_size
         or gray_imgs.shape[-1] < width_block_num * block_size
     ):
-        raise ValueError(f"Invalid image dimensions.{gray_imgs.shape}")
+        raise ValueError(
+            f"Invalid image dimensions. Image must be at least {height_block_num * block_size} x {width_block_num * block_size} because of number of blocks and block size."
+        )
 
     # Divide the image into blocks of shape (height_block_num, width_block_num, block_size, block_size).
     blocks = gray_imgs.unfold(
@@ -306,7 +292,6 @@ def blockwise_dct(
         block_size,
         block_size,
     )
-    # dct_blocks = dct_blocks.permute(0, 2, 1, 3).contiguous()
     dct_blocks = dct_blocks.permute(0, 1, 3, 2, 4).contiguous()
     dct_blocks = dct_blocks.view(
         batch_size,
@@ -320,11 +305,39 @@ def caculate_image_blockiness(
     gray_images: torch.Tensor,
     block_size: int = DEFAULT_BLOCK_SIZE,
 ):
-    assert gray_images.dim() == 4, "Input tensor must have shape (B, C, H, W)."
+    """Calculate the blockiness metric for a batch of grayscale images.
+
+    The blockiness is computed by comparing the blockwise DCT of the original image and an
+    offset version of the image. The offset image is created by shifting the original image by
+    4 pixels in both spatial dimensions.
+
+    Args:
+        gray_images: A 4D tensor with shape (B, C, H, W) representing a batch of grayscale images.
+        block_size: The size of each block used for the DCT computation. Defaults to DEFAULT_BLOCK_SIZE.
+
+    Returns:
+        A tensor containing the summed blockiness scores per image.
+
+    Raises:
+        TypeError: If gray_images is not a torch.Tensor.
+        ValueError: If gray_images does not have 4 dimensions or if its spatial dimensions
+                    are too small for offset calculation.
+        RuntimeError: If any of the intermediate calculations fail.
+    """
+    if not isinstance(gray_images, torch.Tensor):
+        raise TypeError("gray_images must be a torch.Tensor.")
+    if gray_images.dim() != 4:
+        raise ValueError("Input tensor must have shape (B, C, H, W).")
+
+    # Extract height and width from the spatial dimensions.
     height, width = gray_images.shape[-2:]
-    cal_height, cal_width, height_margin, width_margin = calc_margin(
-        height=height, width=width
-    )
+    if height < 4 or width < 4:
+        raise ValueError(
+            "Image height and width must be at least 4 pixels for offset calculation."
+        )
+
+    # Calculate the valid height and width margins.
+    cal_height, cal_width, _, _ = calc_margin(height=height, width=width)
 
     height_block_num, width_block_num = (
         cal_height // block_size,
@@ -335,15 +348,6 @@ def caculate_image_blockiness(
     gray_offset = torch.zeros_like(gray_images)
     gray_offset[..., :-4, :-4] = gray_images[..., 4:, 4:]
     gray_offset = gray_offset[..., :cal_height, :cal_width]
-    ctx = dict(
-        height_block_num=height_block_num,
-        width_block_num=width_block_num,
-        gray_tensor_cut=gray_tensor_cut.shape,
-        cal_height=cal_height,
-        cal_width=cal_width,
-        gray_offset=gray_offset.shape,
-    )
-    print(json.dumps(ctx, indent=4))
 
     dct_imgs = blockwise_dct(
         gray_imgs=gray_tensor_cut,
@@ -358,7 +362,6 @@ def caculate_image_blockiness(
         width_block_num=width_block_num,
         block_size=block_size,
     )
-    input(dct_imgs.shape)
     v_average = calc_v_torch(
         dct_img=dct_imgs,
         height_block_num=height_block_num,
@@ -371,9 +374,8 @@ def caculate_image_blockiness(
         width_block_num=width_block_num,
         block_size=block_size,
     )
-    print(v_average.shape)
-    d = torch.abs((v_offset_average - v_average)) / v_average
-    print("D", d.shape)
+    epsilon = 1e-8
+    d = torch.abs(v_offset_average - v_average) / (v_average + epsilon)
     d_sum = torch.sum(d, dim=(1, 2))
     return d_sum
 

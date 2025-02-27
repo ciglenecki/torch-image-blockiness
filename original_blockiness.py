@@ -56,13 +56,13 @@ class DCT:
             )
 
 
-def calc_margin(height, width):
-    h_margin = height % BLOCK_SIZE
-    w_margin = width % BLOCK_SIZE
-    cal_height = height - (h_margin if h_margin >= 4 else h_margin + BLOCK_SIZE)
-    cal_width = width - (w_margin if w_margin >= 4 else w_margin + BLOCK_SIZE)
-    h_margin = (h_margin + BLOCK_SIZE) if h_margin < 4 else h_margin
-    w_margin = (w_margin + BLOCK_SIZE) if w_margin < 4 else w_margin
+def calc_margin(height, width, block_size=BLOCK_SIZE):
+    h_margin = height % block_size
+    w_margin = width % block_size
+    cal_height = height - (h_margin if h_margin >= 4 else h_margin + block_size)
+    cal_width = width - (w_margin if w_margin >= 4 else w_margin + block_size)
+    h_margin = (h_margin + block_size) if h_margin < 4 else h_margin
+    w_margin = (w_margin + block_size) if w_margin < 4 else w_margin
     return cal_height, cal_width, h_margin, w_margin
 
 
@@ -83,7 +83,7 @@ def calc_DCT(img, dct: DCT, h_block_num, w_block_num):
     return dct_img
 
 
-def calc_V(dct_img, h_block_num, w_block_num):
+def calc_v_npy(dct_img, h_block_num, w_block_num):
     # Number of blocks over which we'll average (the original loop iterates over h_block in range(1, h_block_num-2)
     # and w_block in range(1, w_block_num-2); note that there are (h_block_num-3) x (w_block_num-3) such blocks)
     num_h = h_block_num - 3
@@ -113,7 +113,7 @@ def calc_V(dct_img, h_block_num, w_block_num):
     c_val = dct_img[r, c + BLOCK_SIZE]
     d_val = dct_img[r - BLOCK_SIZE, c]
     e_val = dct_img[r + BLOCK_SIZE, c]
-    # print(e_val[0])
+
     # Compute V for each block and each pixel in the block.
     V = np.sqrt((b_val + c_val - 2 * a) ** 2 + (d_val + e_val - 2 * a) ** 2)
 
@@ -123,43 +123,37 @@ def calc_V(dct_img, h_block_num, w_block_num):
     return V_average
 
 
-# def calc_V(dct_img, h_block_num, w_block_num):
-#     V_average = np.zeros((BLOCK_SIZE, BLOCK_SIZE))
-#     for j in range(BLOCK_SIZE):
-#         for i in range(BLOCK_SIZE):
-#             V_sum = 0
-#             for h_block in range(1, h_block_num - 2):
-#                 for w_block in range(1, w_block_num - 2):
-#                     w_idx = BLOCK_SIZE + w_block * BLOCK_SIZE + i
-#                     h_idx = BLOCK_SIZE + h_block * BLOCK_SIZE + j
-#                     a = dct_img[h_idx, w_idx]
-#                     b = dct_img[h_idx, w_idx - BLOCK_SIZE]
-#                     c = dct_img[h_idx, w_idx + BLOCK_SIZE]
-#                     d = dct_img[h_idx - BLOCK_SIZE, w_idx]
-#                     e = dct_img[h_idx + BLOCK_SIZE, w_idx]
-#                     V = np.sqrt((b + c - 2 * a) ** 2 + (d + e - 2 * a) ** 2)
-#                     V_sum += V
-
-#             V_average[j, i] = V_sum / ((h_block_num - 2) * (w_block_num - 2))
-
-#     return V_average
+def calc_V(dct_img, h_block_num, w_block_num):
+    V_average = np.zeros((BLOCK_SIZE, BLOCK_SIZE))
+    for j in range(BLOCK_SIZE):
+        for i in range(BLOCK_SIZE):
+            V_sum = 0
+            for h_block in range(1, h_block_num - 2):
+                for w_block in range(1, w_block_num - 2):
+                    w_idx = BLOCK_SIZE + w_block * BLOCK_SIZE + i
+                    h_idx = BLOCK_SIZE + h_block * BLOCK_SIZE + j
+                    a = dct_img[h_idx, w_idx]
+                    b = dct_img[h_idx, w_idx - BLOCK_SIZE]
+                    c = dct_img[h_idx, w_idx + BLOCK_SIZE]
+                    d = dct_img[h_idx - BLOCK_SIZE, w_idx]
+                    e = dct_img[h_idx + BLOCK_SIZE, w_idx]
+                    V = np.sqrt((b + c - 2 * a) ** 2 + (d + e - 2 * a) ** 2)
+                    V_sum += V
+            V_average[j, i] = V_sum / ((h_block_num - 2) * (w_block_num - 2))
+    return V_average
 
 
 def process_image(gray_img, dct):
-    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     height, width = gray_img.shape
-    cal_height, cal_width, h_margin, w_margin = calc_margin(height, width)
+    cal_height, cal_width, _, _ = calc_margin(height, width)
     h_block_num, w_block_num = cal_height // BLOCK_SIZE, cal_width // BLOCK_SIZE
 
     dct_img = calc_DCT(gray_img, dct, h_block_num, w_block_num)
     dct_cropped_img = calc_DCT(gray_img[4:, 4:], dct, h_block_num, w_block_num)
 
     V_average = calc_V(dct_img, h_block_num, w_block_num)
-
     Vc_average = calc_V(dct_cropped_img, h_block_num, w_block_num)
-
     D = np.abs((Vc_average - V_average) / V_average)
-
     return np.sum(D)
 
 
@@ -185,12 +179,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dct = DCT()
+    dct = DCT(N=BLOCK_SIZE)
 
     paths = sorted(list(Path(args.rootpath).rglob(f"*.{args.suffix}")))
 
     with open(args.savefile, mode="w") as f:
         for path in tqdm(paths):
             img = cv2.imread(os.path.join(args.rootpath, path))
-            D_value = process_image(img, dct)
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            D_value = process_image(gray_img, dct)
             f.write(os.path.join(args.rootpath, path) + "\t" + str(D_value) + "\n")
